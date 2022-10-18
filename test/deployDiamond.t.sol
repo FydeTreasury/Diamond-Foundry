@@ -75,11 +75,14 @@ contract DiamondDeployer is Test, IDiamondCut {
     internal
     returns (bytes4[] memory selectors)
     {
-        string[] memory cmd = new string[](3);
-        cmd[0] = "forge inspect";
-        cmd[1] = _facetName;
-        cmd[2] = "methods";
+        string[] memory cmd = new string[](4);
+        cmd[0] = "forge";
+        cmd[1] = "inspect";
+        cmd[2] = _facetName;
+        cmd[3] = "methods";
         bytes memory res = vm.ffi(cmd);
+
+        // how to convert bytes memory result to bytes4[] selector array??
         selectors = abi.decode(res, (bytes4[]));
     }
 
