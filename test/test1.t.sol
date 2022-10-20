@@ -2,9 +2,11 @@
 pragma solidity ^0.8.0;
 
 import "../src/interfaces/IDiamondCut.sol";
+import "../src/interfaces/IDiamondLoupe.sol";
 import "../src/facets/DiamondCutFacet.sol";
 import "../src/facets/DiamondLoupeFacet.sol";
 import "../src/facets/OwnershipFacet.sol";
+import "../src/facets/Test1Facet.sol";
 import "../../lib/forge-std/src/Test.sol";
 import "../src/Diamond.sol";
 
@@ -19,14 +21,21 @@ contract DiamondDeployer is Test, IDiamondCut {
     DiamondLoupeFacet dLoupe;
     OwnershipFacet ownerF;
 
+    //interfaces with Facet ABI connected to diamond address
+    IDiamondLoupe ILoupe;
+    IDiamondCut ICut;
 
-    function testDeployDiamond() public {
+    address[] facetAddresses;
+    string[] facetNames;
+
+    // deploys diamond and connects facets
+    function setUp() public {
 
         //deploy facets
         dCutFacet = new DiamondCutFacet();
         dLoupe = new DiamondLoupeFacet();
         ownerF = new OwnershipFacet();
-
+        facetNames = ["DiamondCutFacet", "DiamondLoupeFacet", "OwnershipFacet"];
 
         // diamod arguments
         DiamondArgs memory _args = DiamondArgs({
@@ -68,14 +77,77 @@ contract DiamondDeployer is Test, IDiamondCut {
         })
         );
 
-        //upgrade diamond
-        IDiamondCut(address(diamond)).diamondCut(cut, address(0x0), "");
+        // initialise interfaces
+        ILoupe = IDiamondLoupe(address(diamond));
+        ICut = IDiamondCut(address(diamond));
 
-        //call a function
-        DiamondLoupeFacet(address(diamond)).facetAddresses();
+        //upgrade diamond
+        ICut.diamondCut(cut, address(0x0), "");
+
+        //get facetAddresses
+        facetAddresses = DiamondLoupeFacet(address(diamond)).facetAddresses();
+
+
     }
 
-    // try implementing solidity only - still doesnt work
+
+    // TEST CASES
+
+
+    function test1HasThreeFacets() public {
+        assertEq(3, facetAddresses.length);
+    }
+
+
+    function test2FacetsHaveCorrectSelectors() public {
+
+        for (uint i = 0; i < facetAddresses.length; i++) {
+            bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(facetAddresses[i]);
+            bytes4[] memory fromGenSelectors =  generateSelectors(facetNames[i]);
+            assertEq(abi.encode(fromLoupeFacet), abi.encode(fromGenSelectors));
+        }
+    }
+
+
+    function test3SelectorsAssociatedWithCorrectFacet() public {
+        for (uint i = 0; i < facetAddresses.length; i++) {
+            assertEq(facetAddresses[i], ILoupe.facetAddress(generateSelectors(facetNames[i])[0]));
+        }
+    }
+
+
+    function test4AddTest1FacetFunctions() public {
+        Test1Facet test1Facet = new Test1Facet();
+
+        FacetCut[] memory cutTest1 = new FacetCut[](1);
+
+        bytes4[] memory fromGenSelectors= removeIndex(0, generateSelectors("Test1Facet"));
+
+
+
+        cutTest1[0] = (
+        FacetCut({
+        facetAddress: address(test1Facet),
+        action: FacetCutAction.Add,
+        functionSelectors: fromGenSelectors
+        })
+        );
+
+
+        ICut.diamondCut(cutTest1, address(0x0), "");
+
+        bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(address(test1Facet));
+        assertEq(abi.encode(fromLoupeFacet), abi.encode(fromGenSelectors));
+
+    }
+
+
+
+
+
+    // HELPER FUNCTIONS
+
+    // return array of function selectors for given facet name
     function generateSelectors(string memory _facetName)
     internal
     returns (bytes4[] memory selectors)
@@ -105,6 +177,14 @@ contract DiamondDeployer is Test, IDiamondCut {
 
 
 
+    }
+
+    function removeIndex(uint index, bytes4[] memory array) public returns (bytes4[] memory){
+        for(uint i = index; i < array.length-1; i++){
+            array[i] = array[i+1];
+        }
+        delete array[array.length - 1];
+        return array;
     }
 
 
