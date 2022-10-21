@@ -7,7 +7,7 @@ import "../src/facets/DiamondCutFacet.sol";
 import "../src/facets/DiamondLoupeFacet.sol";
 import "../src/facets/OwnershipFacet.sol";
 import "../src/facets/Test1Facet.sol";
-import "../../lib/forge-std/src/Test.sol";
+import "../lib/forge-std/src/Test.sol";
 import "../src/Diamond.sol";
 
 import "solidity-stringutils/strings.sol";
@@ -112,7 +112,7 @@ contract DiamondDeployer is IDiamondCut, Test {
         strings.slice memory s = st.toSlice();
         strings.slice memory delim = ":".toSlice();
         strings.slice memory delim2 = ",".toSlice();
-        bytes4[] memory selectors = new bytes4[]((s.count(delim)));
+        selectors = new bytes4[]((s.count(delim)));
         for(uint i = 0; i < selectors.length; i++) {
             s.split('"'.toSlice());
             selectors[i] = bytes4(s.split(delim).until('"'.toSlice()).keccak());
