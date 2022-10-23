@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../TokenPool.sol";
 import "./VoteProxyRegistry.sol";
+
 /*
  ________ ________  ________ _________  ________  ________      ___    ___ 
 |\  _____\\   __  \|\   ____\\___   ___\\   __  \|\   __  \    |\  \  /  /|

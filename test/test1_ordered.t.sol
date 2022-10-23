@@ -180,6 +180,7 @@ contract TestUpgrade is DiamondDeployer{
     constructor() {
         //deploy Test1Facet
         test1Facet = new Test1Facet();
+        console.logBytes4(test1Facet.test1Func10.selector);
 
         // get functions selectors but remove first element (supportsInterface)
         bytes4[] memory fromGenSelectors  = removeIndex(0, generateSelectors("Test1Facet"));
