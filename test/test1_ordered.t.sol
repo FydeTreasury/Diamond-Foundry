@@ -28,6 +28,7 @@ abstract contract StateDeployDiamond is IDiamondCut, IDiamondLoupe, Test {
     IDiamondCut ICut;
 
     string[] facetNames;
+    address[] facetAddressList;
 
     // deploys diamond and connects facets
     function setUp() public virtual {
@@ -85,7 +86,8 @@ abstract contract StateDeployDiamond is IDiamondCut, IDiamondLoupe, Test {
         //upgrade diamond
         ICut.diamondCut(cut, address(0x0), "");
 
-
+        // get all addresses
+        facetAddressList = ILoupe.facetAddresses();
     }
 
     // HELPER FUNCTIONS
@@ -181,18 +183,18 @@ abstract contract StateDeployDiamond is IDiamondCut, IDiamondLoupe, Test {
     }
 
     function getAllSelectors(address diamondAddress) public view returns (bytes4[] memory){
-        Facet[] memory facets = IDiamondLoupe(diamondAddress).facets();
+        Facet[] memory facetList = IDiamondLoupe(diamondAddress).facets();
 
         uint len = 0;
-        for (uint i = 0; i < facets.length; i++) {
-            len += facets[i].functionSelectors.length;
+        for (uint i = 0; i < facetList.length; i++) {
+            len += facetList[i].functionSelectors.length;
         }
 
         uint pos = 0;
         bytes4[] memory selectors = new bytes4[](len);
-        for (uint i = 0; i < facets.length; i++) {
-            for (uint j = 0; j < facets[i].functionSelectors.length; j++) {
-                selectors[pos] = facets[i].functionSelectors[j];
+        for (uint i = 0; i < facetList.length; i++) {
+            for (uint j = 0; j < facetList[i].functionSelectors.length; j++) {
+                selectors[pos] = facetList[i].functionSelectors[j];
                 pos += 1;
             }
         }
@@ -222,14 +224,14 @@ contract TestDeployDiamond is StateDeployDiamond {
     // TEST CASES
 
     function test1HasThreeFacets() public {
-        assertEq(ILoupe.facetAddresses().length, 3);
+        assertEq(facetAddressList.length, 3);
     }
 
 
     function test2FacetsHaveCorrectSelectors() public {
 
-        for (uint i = 0; i < ILoupe.facetAddresses().length; i++) {
-            bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(ILoupe.facetAddresses()[i]);
+        for (uint i = 0; i < facetAddressList.length; i++) {
+            bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(facetAddressList[i]);
             bytes4[] memory fromGenSelectors =  generateSelectors(facetNames[i]);
             assertTrue(sameMembers(fromLoupeFacet, fromGenSelectors));
         }
@@ -237,10 +239,10 @@ contract TestDeployDiamond is StateDeployDiamond {
 
 
     function test3SelectorsAssociatedWithCorrectFacet() public {
-        for (uint i = 0; i < ILoupe.facetAddresses().length; i++) {
+        for (uint i = 0; i < facetAddressList.length; i++) {
             bytes4[] memory fromGenSelectors =  generateSelectors(facetNames[i]);
             for (uint j = 0; i < fromGenSelectors.length; i++) {
-                assertEq(ILoupe.facetAddresses()[i], ILoupe.facetAddress(fromGenSelectors[j]));
+                assertEq(facetAddressList[i], ILoupe.facetAddress(fromGenSelectors[j]));
             }
         }
     }
