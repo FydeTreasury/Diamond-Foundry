@@ -211,27 +211,22 @@ contract TestAddFacet2 is StateAddFacet2{
 
 contract TestCacheBug is StateCacheBug {
 
+    function testNoCacheBug() public {
+        bytes4[] memory fromLoupeSelectors = ILoupe.facetFunctionSelectors(address(test1Facet));
 
-    function test1CheckSelectorsLength() public {
-        bytes4[] memory selectors = ILoupe.facetFunctionSelectors(address(test1Facet));
-        console.log("Selectors Length::: ", selectors.length);
-        assertEq(selectors.length, 9, "selectors length is not 9");
-    }
+        assertTrue(containsElement(fromLoupeSelectors, selectors[0]));
+        assertTrue(containsElement(fromLoupeSelectors, selectors[1]));
+        assertTrue(containsElement(fromLoupeSelectors, selectors[2]));
+        assertTrue(containsElement(fromLoupeSelectors, selectors[3]));
+        assertTrue(containsElement(fromLoupeSelectors, selectors[4]));
+        assertTrue(containsElement(fromLoupeSelectors, selectors[6]));
+        assertTrue(containsElement(fromLoupeSelectors, selectors[7]));
+        assertTrue(containsElement(fromLoupeSelectors, selectors[8]));
+        assertTrue(containsElement(fromLoupeSelectors, selectors[9]));
 
-    function test2CheckSelectors() public {
-        bytes4[] memory selectors = ILoupe.facetFunctionSelectors(address(test1Facet));
-        bytes4[] memory expectedSelectors = new bytes4[](9);
-        expectedSelectors[0] = sel0;
-        expectedSelectors[1] = sel1;
-        expectedSelectors[2] = sel2;
-        expectedSelectors[3] = sel3;
-        expectedSelectors[4] = sel4;
-        expectedSelectors[5] = sel6;
-        expectedSelectors[6] = sel7;
-        expectedSelectors[7] = sel8;
-        expectedSelectors[8] = sel9;
-
-        sameMembers(selectors, expectedSelectors);
+        assertFalse(containsElement(fromLoupeSelectors, ownerSel));
+        assertFalse(containsElement(fromLoupeSelectors, selectors[10]));
+        assertFalse(containsElement(fromLoupeSelectors, selectors[5]));
     }
 
 }
