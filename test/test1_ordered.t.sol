@@ -1,221 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "../src/interfaces/IDiamondCut.sol";
-import "../src/interfaces/IDiamondLoupe.sol";
-import "../src/facets/DiamondCutFacet.sol";
-import "../src/facets/DiamondLoupeFacet.sol";
-import "../src/facets/OwnershipFacet.sol";
-import "../src/facets/Test1Facet.sol";
-import "../src/facets/Test2Facet.sol";
-import "../lib/forge-std/src/Test.sol";
-import "../src/Diamond.sol";
-
-import "solidity-stringutils/strings.sol";
-
-
-abstract contract StateDeployDiamond is IDiamondCut, IDiamondLoupe, Test {
-    using strings for *;
-
-    //contract types of facets to be deployed
-    Diamond diamond;
-    DiamondCutFacet dCutFacet;
-    DiamondLoupeFacet dLoupe;
-    OwnershipFacet ownerF;
-
-    //interfaces with Facet ABI connected to diamond address
-    IDiamondLoupe ILoupe;
-    IDiamondCut ICut;
-
-    string[] facetNames;
-    address[] facetAddressList;
-
-    // deploys diamond and connects facets
-    function setUp() public virtual {
-
-        //deploy facets
-        dCutFacet = new DiamondCutFacet();
-        dLoupe = new DiamondLoupeFacet();
-        ownerF = new OwnershipFacet();
-        facetNames = ["DiamondCutFacet", "DiamondLoupeFacet", "OwnershipFacet"];
-
-        // diamod arguments
-        DiamondArgs memory _args = DiamondArgs({
-        owner: address(this),
-        init: address(0),
-        initCalldata: " "
-        });
-
-        // FacetCut with CutFacet for initialisation
-        FacetCut[] memory cut0 = new FacetCut[](1);
-        cut0[0] = FacetCut ({
-        facetAddress: address(dCutFacet),
-        action: IDiamond.FacetCutAction.Add,
-        functionSelectors: generateSelectors("DiamondCutFacet")
-        });
-
-
-        // deploy diamond
-        diamond = new Diamond(cut0, _args);
-
-        //upgrade diamond with facets
-
-        //build cut struct
-        FacetCut[] memory cut = new FacetCut[](2);
-
-        cut[0] = (
-        FacetCut({
-        facetAddress: address(dLoupe),
-        action: FacetCutAction.Add,
-        functionSelectors: generateSelectors("DiamondLoupeFacet")
-        })
-        );
-
-        cut[1] = (
-        FacetCut({
-        facetAddress: address(ownerF),
-        action: FacetCutAction.Add,
-        functionSelectors: generateSelectors("OwnershipFacet")
-        })
-        );
-
-        // initialise interfaces
-        ILoupe = IDiamondLoupe(address(diamond));
-        ICut = IDiamondCut(address(diamond));
-
-        //upgrade diamond
-        ICut.diamondCut(cut, address(0x0), "");
-
-        // get all addresses
-        facetAddressList = ILoupe.facetAddresses();
-    }
-
-    // HELPER FUNCTIONS
-
-    // return array of function selectors for given facet name
-    function generateSelectors(string memory _facetName)
-    internal
-    returns (bytes4[] memory selectors)
-    {
-
-        //get string of contract methods
-        string[] memory cmd = new string[](4);
-        cmd[0] = "forge";
-        cmd[1] = "inspect";
-        cmd[2] = _facetName;
-        cmd[3] = "methods";
-        bytes memory res = vm.ffi(cmd);
-        string memory st = string(res);
-
-        // extract function signatures and take first 4 bytes of keccak
-        strings.slice memory s = st.toSlice();
-        strings.slice memory delim = ":".toSlice();
-        strings.slice memory delim2 = ",".toSlice();
-        selectors = new bytes4[]((s.count(delim)));
-        for(uint i = 0; i < selectors.length; i++) {
-            s.split('"'.toSlice());
-            selectors[i] = bytes4(s.split(delim).until('"'.toSlice()).keccak());
-            s.split(delim2);
-
-        }
-        return selectors;
-
-
-
-    }
-
-    // helper to remove index from bytes4[] array
-    function removeElement(uint index, bytes4[] memory array) public pure returns (bytes4[] memory){
-        bytes4[] memory newarray = new bytes4[](array.length-1);
-        uint j = 0;
-        for(uint i = 0; i < array.length; i++){
-            if (i != index){
-                newarray[j] = array[i];
-                j += 1;
-            }
-        }
-        return newarray;
-
-    }
-
-    // helper to remove value from bytes4[] array
-    function removeElement(bytes4 el, bytes4[] memory array) public pure returns (bytes4[] memory){
-        for(uint i = 0; i < array.length; i++){
-            if (array[i] == el){
-                return removeElement(i, array);
-            }
-        }
-        return array;
-
-    }
-
-    function containsElement(bytes4[] memory array, bytes4 el) public pure returns (bool) {
-        for (uint i = 0; i < array.length; i++) {
-            if (array[i] == el) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    function containsElement(address[] memory array, address el) public pure returns (bool) {
-        for (uint i = 0; i < array.length; i++) {
-            if (array[i] == el) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    function sameMembers(bytes4[] memory array1, bytes4[] memory array2) public pure returns (bool) {
-        if (array1.length != array2.length) {
-            return false;
-        }
-        for (uint i = 0; i < array1.length; i++) {
-            if (containsElement(array1, array2[i])){
-            return true;
-            }
-        }
-
-        return false;
-    }
-
-    function getAllSelectors(address diamondAddress) public view returns (bytes4[] memory){
-        Facet[] memory facetList = IDiamondLoupe(diamondAddress).facets();
-
-        uint len = 0;
-        for (uint i = 0; i < facetList.length; i++) {
-            len += facetList[i].functionSelectors.length;
-        }
-
-        uint pos = 0;
-        bytes4[] memory selectors = new bytes4[](len);
-        for (uint i = 0; i < facetList.length; i++) {
-            for (uint j = 0; j < facetList[i].functionSelectors.length; j++) {
-                selectors[pos] = facetList[i].functionSelectors[j];
-                pos += 1;
-            }
-        }
-        return selectors;
-    }
-
-
-
-
-
-    function diamondCut(FacetCut[] calldata _diamondCut, address _init, bytes calldata _calldata) external override {}
-
-    function facetAddress(bytes4 _functionSelector) external view returns (address facetAddress_) {}
-
-    function facetAddresses() external view returns (address[] memory facetAddresses_) {}
-
-    function facetFunctionSelectors(address _facet) external view returns (bytes4[] memory facetFunctionSelectors_) {}
-
-    function facets() external view returns (Facet[] memory facets_) {}
-
-}
+import "./TestStates.sol";
 
 // test proper deployment of diamond
 contract TestDeployDiamond is StateDeployDiamond {
@@ -249,35 +35,7 @@ contract TestDeployDiamond is StateDeployDiamond {
 
 }
 
-// tests proper upgrade of diamond when adding a facet
-abstract contract StateAddFacet1 is StateDeployDiamond{
 
-    Test1Facet test1Facet;
-
-    function setUp() public virtual override {
-        super.setUp();
-        //deploy Test1Facet
-        test1Facet = new Test1Facet();
-
-        // get functions selectors but remove first element (supportsInterface)
-        bytes4[] memory fromGenSelectors  = removeElement(uint(0), generateSelectors("Test1Facet"));
-
-
-        // array of functions to add
-        FacetCut[] memory facetCut = new FacetCut[](1);
-        facetCut[0] =
-        FacetCut({
-        facetAddress: address(test1Facet),
-        action: FacetCutAction.Add,
-        functionSelectors: fromGenSelectors
-        });
-
-        // add functions to diamond
-        ICut.diamondCut(facetCut, address(0x0), "");
-
-    }
-
-}
 
 contract TestAddFacet1 is StateAddFacet1{
 
@@ -322,33 +80,7 @@ contract TestAddFacet1 is StateAddFacet1{
 
 }
 
-abstract contract StateAddFacet2 is StateAddFacet1{
 
-    Test2Facet test2Facet;
-
-    function setUp() public virtual override {
-        super.setUp();
-        //deploy Test1Facet
-        test2Facet = new Test2Facet();
-
-        // get functions selectors but remove first element (supportsInterface)
-        bytes4[] memory fromGenSelectors  = generateSelectors("Test2Facet");
-
-        // array of functions to add
-        FacetCut[] memory facetCut = new FacetCut[](1);
-        facetCut[0] =
-        FacetCut({
-        facetAddress: address(test2Facet),
-        action: FacetCutAction.Add,
-        functionSelectors: fromGenSelectors
-        });
-
-        // add functions to diamond
-        ICut.diamondCut(facetCut, address(0x0), "");
-
-    }
-
-}
 
 
 contract TestAddFacet2 is StateAddFacet2{
@@ -472,6 +204,34 @@ contract TestAddFacet2 is StateAddFacet2{
     testselector[0] = functionsToKeep[1];
     assertTrue(sameMembers(facets[1].functionSelectors, testselector));
 
+    }
+
+}
+
+
+contract TestCacheBug is StateCacheBug {
+
+
+    function test1CheckSelectorsLength() public {
+        bytes4[] memory selectors = ILoupe.facetFunctionSelectors(address(test1Facet));
+        console.log("Selectors Length::: ", selectors.length);
+        assertEq(selectors.length, 9, "selectors length is not 9");
+    }
+
+    function test2CheckSelectors() public {
+        bytes4[] memory selectors = ILoupe.facetFunctionSelectors(address(test1Facet));
+        bytes4[] memory expectedSelectors = new bytes4[](9);
+        expectedSelectors[0] = sel0;
+        expectedSelectors[1] = sel1;
+        expectedSelectors[2] = sel2;
+        expectedSelectors[3] = sel3;
+        expectedSelectors[4] = sel4;
+        expectedSelectors[5] = sel6;
+        expectedSelectors[6] = sel7;
+        expectedSelectors[7] = sel8;
+        expectedSelectors[8] = sel9;
+
+        sameMembers(selectors, expectedSelectors);
     }
 
 }
