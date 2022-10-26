@@ -7,13 +7,14 @@ import "../src/facets/DiamondCutFacet.sol";
 import "../src/facets/DiamondLoupeFacet.sol";
 import "../src/facets/OwnershipFacet.sol";
 import "../src/facets/Test1Facet.sol";
+import "../src/facets/Test2Facet.sol";
 import "../lib/forge-std/src/Test.sol";
 import "../src/Diamond.sol";
 
 import "solidity-stringutils/strings.sol";
 
 
-contract DiamondDeployer is IDiamondCut, Test {
+abstract contract StateDeployDiamond is IDiamondCut, IDiamondLoupe, Test {
     using strings for *;
 
     //contract types of facets to be deployed
@@ -26,11 +27,10 @@ contract DiamondDeployer is IDiamondCut, Test {
     IDiamondLoupe ILoupe;
     IDiamondCut ICut;
 
-    address[] facetAddresses;
     string[] facetNames;
 
     // deploys diamond and connects facets
-    constructor() {
+    function setUp() public virtual {
 
         //deploy facets
         dCutFacet = new DiamondCutFacet();
@@ -85,9 +85,6 @@ contract DiamondDeployer is IDiamondCut, Test {
         //upgrade diamond
         ICut.diamondCut(cut, address(0x0), "");
 
-        //get facetAddresses
-        facetAddresses = DiamondLoupeFacet(address(diamond)).facetAddresses();
-
 
     }
 
@@ -126,68 +123,147 @@ contract DiamondDeployer is IDiamondCut, Test {
     }
 
     // helper to remove index from bytes4[] array
-    function removeIndex(uint index, bytes4[] memory array) public pure returns (bytes4[] memory){
-        for(uint i = index; i < array.length-1; i++){
-            array[i] = array[i+1];
+    function removeElement(uint index, bytes4[] memory array) public pure returns (bytes4[] memory){
+        bytes4[] memory newarray = new bytes4[](array.length-1);
+        uint j = 0;
+        for(uint i = 0; i < array.length; i++){
+            if (i != index){
+                newarray[j] = array[i];
+                j += 1;
+            }
         }
-        delete array[array.length - 1];
+        return newarray;
+
+    }
+
+    // helper to remove value from bytes4[] array
+    function removeElement(bytes4 el, bytes4[] memory array) public pure returns (bytes4[] memory){
+        for(uint i = 0; i < array.length; i++){
+            if (array[i] == el){
+                return removeElement(i, array);
+            }
+        }
         return array;
+
+    }
+
+    function containsElement(bytes4[] memory array, bytes4 el) public pure returns (bool) {
+        for (uint i = 0; i < array.length; i++) {
+            if (array[i] == el) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function containsElement(address[] memory array, address el) public pure returns (bool) {
+        for (uint i = 0; i < array.length; i++) {
+            if (array[i] == el) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function sameMembers(bytes4[] memory array1, bytes4[] memory array2) public pure returns (bool) {
+        if (array1.length != array2.length) {
+            return false;
+        }
+        for (uint i = 0; i < array1.length; i++) {
+            if (containsElement(array1, array2[i])){
+            return true;
+            }
+        }
+
+        return false;
+    }
+
+    function getAllSelectors(address diamondAddress) public view returns (bytes4[] memory){
+        Facet[] memory facets = IDiamondLoupe(diamondAddress).facets();
+
+        uint len = 0;
+        for (uint i = 0; i < facets.length; i++) {
+            len += facets[i].functionSelectors.length;
+        }
+
+        uint pos = 0;
+        bytes4[] memory selectors = new bytes4[](len);
+        for (uint i = 0; i < facets.length; i++) {
+            for (uint j = 0; j < facets[i].functionSelectors.length; j++) {
+                selectors[pos] = facets[i].functionSelectors[j];
+                pos += 1;
+            }
+        }
+        return selectors;
     }
 
 
-    function diamondCut(
-        FacetCut[] calldata _diamondCut,
-        address _init,
-        bytes calldata _calldata
-    ) external override {}
+
+
+
+    function diamondCut(FacetCut[] calldata _diamondCut, address _init, bytes calldata _calldata) external override {}
+
+    function facetAddress(bytes4 _functionSelector) external view returns (address facetAddress_) {}
+
+    function facetAddresses() external view returns (address[] memory facetAddresses_) {}
+
+    function facetFunctionSelectors(address _facet) external view returns (bytes4[] memory facetFunctionSelectors_) {}
+
+    function facets() external view returns (Facet[] memory facets_) {}
 
 }
 
 // test proper deployment of diamond
-contract TestDeployment is DiamondDeployer {
+contract TestDeployDiamond is StateDeployDiamond {
 
 
     // TEST CASES
 
     function test1HasThreeFacets() public {
-        assertEq(facetAddresses.length, 3);
+        assertEq(ILoupe.facetAddresses().length, 3);
     }
 
 
     function test2FacetsHaveCorrectSelectors() public {
 
-        for (uint i = 0; i < facetAddresses.length; i++) {
-            bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(facetAddresses[i]);
+        for (uint i = 0; i < ILoupe.facetAddresses().length; i++) {
+            bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(ILoupe.facetAddresses()[i]);
             bytes4[] memory fromGenSelectors =  generateSelectors(facetNames[i]);
-            assertEq(abi.encode(fromLoupeFacet), abi.encode(fromGenSelectors));
+            assertTrue(sameMembers(fromLoupeFacet, fromGenSelectors));
         }
     }
 
 
     function test3SelectorsAssociatedWithCorrectFacet() public {
-        for (uint i = 0; i < facetAddresses.length; i++) {
-            assertEq(facetAddresses[i], ILoupe.facetAddress(generateSelectors(facetNames[i])[0]));
+        for (uint i = 0; i < ILoupe.facetAddresses().length; i++) {
+            bytes4[] memory fromGenSelectors =  generateSelectors(facetNames[i]);
+            for (uint j = 0; i < fromGenSelectors.length; i++) {
+                assertEq(ILoupe.facetAddresses()[i], ILoupe.facetAddress(fromGenSelectors[j]));
+            }
         }
     }
 
 }
 
 // tests proper upgrade of diamond when adding a facet
-contract TestUpgrade is DiamondDeployer{
+abstract contract StateAddFacet1 is StateDeployDiamond{
 
     Test1Facet test1Facet;
 
-    constructor() {
+    function setUp() public virtual override {
+        super.setUp();
         //deploy Test1Facet
         test1Facet = new Test1Facet();
-        console.logBytes4(test1Facet.test1Func10.selector);
 
         // get functions selectors but remove first element (supportsInterface)
-        bytes4[] memory fromGenSelectors  = removeIndex(0, generateSelectors("Test1Facet"));
+        bytes4[] memory fromGenSelectors  = removeElement(uint(0), generateSelectors("Test1Facet"));
+
 
         // array of functions to add
-        FacetCut[] memory cutTest1 = new FacetCut[](1);
-        cutTest1[0] =
+        FacetCut[] memory facetCut = new FacetCut[](1);
+        facetCut[0] =
         FacetCut({
         facetAddress: address(test1Facet),
         action: FacetCutAction.Add,
@@ -195,16 +271,20 @@ contract TestUpgrade is DiamondDeployer{
         });
 
         // add functions to diamond
-        ICut.diamondCut(cutTest1, address(0x0), "");
+        ICut.diamondCut(facetCut, address(0x0), "");
 
     }
+
+}
+
+contract TestAddFacet1 is StateAddFacet1{
 
     function test4AddTest1FacetFunctions() public {
 
         // check if functions added to diamond
         bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(address(test1Facet));
-        bytes4[] memory fromGenSelectors  = removeIndex(0, generateSelectors("Test1Facet"));
-        assertEq(abi.encode(fromLoupeFacet), abi.encode(fromGenSelectors));
+        bytes4[] memory fromGenSelectors  = removeElement(uint(0), generateSelectors("Test1Facet"));
+        assertTrue(sameMembers(fromLoupeFacet, fromGenSelectors));
 
     }
 
@@ -235,6 +315,160 @@ contract TestUpgrade is DiamondDeployer{
 
         // check supportsInterface method connected to test1Facet
         assertEq(address(test1Facet), ILoupe.facetAddress(fromGenSelectors[0]));
+
+    }
+
+}
+
+abstract contract StateAddFacet2 is StateAddFacet1{
+
+    Test2Facet test2Facet;
+
+    function setUp() public virtual override {
+        super.setUp();
+        //deploy Test1Facet
+        test2Facet = new Test2Facet();
+
+        // get functions selectors but remove first element (supportsInterface)
+        bytes4[] memory fromGenSelectors  = generateSelectors("Test2Facet");
+
+        // array of functions to add
+        FacetCut[] memory facetCut = new FacetCut[](1);
+        facetCut[0] =
+        FacetCut({
+        facetAddress: address(test2Facet),
+        action: FacetCutAction.Add,
+        functionSelectors: fromGenSelectors
+        });
+
+        // add functions to diamond
+        ICut.diamondCut(facetCut, address(0x0), "");
+
+    }
+
+}
+
+
+contract TestAddFacet2 is StateAddFacet2{
+
+    function test7AddTest2FacetFunctions() public {
+
+        // check if functions added to diamond
+        bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(address(test2Facet));
+        bytes4[] memory fromGenSelectors  = generateSelectors("Test2Facet");
+        assertTrue(sameMembers(fromLoupeFacet, fromGenSelectors));
+
+    }
+
+
+    function test8RemoveSomeTest2FacetFunctions() public {
+
+        bytes4[] memory functionsToKeep = new bytes4[](5);
+        functionsToKeep[0] = test2Facet.test2Func1.selector;
+        functionsToKeep[1] = test2Facet.test2Func5.selector;
+        functionsToKeep[2] = test2Facet.test2Func6.selector;
+        functionsToKeep[3] = test2Facet.test2Func19.selector;
+        functionsToKeep[4] = test2Facet.test2Func20.selector;
+
+        bytes4[] memory selectors = ILoupe.facetFunctionSelectors(address(test2Facet));
+        for (uint i = 0; i<functionsToKeep.length; i++){
+            selectors = removeElement(functionsToKeep[i], selectors);
+        }
+
+
+        // array of functions to remove
+        FacetCut[] memory facetCut = new FacetCut[](1);
+        facetCut[0] =
+        FacetCut({
+        facetAddress: address(0x0),
+        action: FacetCutAction.Remove,
+        functionSelectors: selectors
+        });
+
+        // add functions to diamond
+        ICut.diamondCut(facetCut, address(0x0), "");
+
+        bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(address(test2Facet));
+        assertTrue(sameMembers(fromLoupeFacet, functionsToKeep));
+
+
+
+    }
+
+
+    function test9RemoveSomeTest1FacetFunctions() public {
+
+        bytes4[] memory functionsToKeep = new bytes4[](3);
+        functionsToKeep[0] = test1Facet.test1Func2.selector;
+        functionsToKeep[1] = test1Facet.test1Func11.selector;
+        functionsToKeep[2] = test1Facet.test1Func12.selector;
+
+
+        bytes4[] memory selectors = ILoupe.facetFunctionSelectors(address(test1Facet));
+        for (uint i = 0; i<functionsToKeep.length; i++){
+            selectors = removeElement(functionsToKeep[i], selectors);
+        }
+
+
+        // array of functions to remove
+        FacetCut[] memory facetCut = new FacetCut[](1);
+        facetCut[0] =
+        FacetCut({
+        facetAddress: address(0x0),
+        action: FacetCutAction.Remove,
+        functionSelectors: selectors
+        });
+
+        // add functions to diamond
+        ICut.diamondCut(facetCut, address(0x0), "");
+
+        bytes4[] memory fromLoupeFacet = ILoupe.facetFunctionSelectors(address(test1Facet));
+        assertTrue(sameMembers(fromLoupeFacet, functionsToKeep));
+
+
+
+    }
+
+    function test10RemoveAllExceptDiamondCutAndFacetFunction() public {
+
+    bytes4[] memory selectors = getAllSelectors(address(diamond));
+
+    bytes4[] memory functionsToKeep = new bytes4[](2);
+    functionsToKeep[0] = DiamondCutFacet.diamondCut.selector;
+    functionsToKeep[1] = DiamondLoupeFacet.facets.selector;
+
+
+    selectors = removeElement(functionsToKeep[0], selectors);
+    selectors = removeElement(functionsToKeep[1], selectors);
+
+
+    // array of functions to remove
+    FacetCut[] memory facetCut = new FacetCut[](1);
+    facetCut[0] =
+    FacetCut({
+    facetAddress: address(0x0),
+    action: FacetCutAction.Remove,
+    functionSelectors: selectors
+    });
+
+    // remove functions from diamond
+    ICut.diamondCut(facetCut, address(0x0), "");
+
+
+    Facet[] memory facets = ILoupe.facets();
+    bytes4[] memory testselector = new bytes4[](1);
+
+    assertEq(facets.length, 2);
+
+    assertEq(facets[0].facetAddress, address(dCutFacet));
+
+    testselector[0] = functionsToKeep[0];
+    assertTrue(sameMembers(facets[0].functionSelectors, testselector));
+
+
+    assertEq(facets[1].facetAddress, address(dLoupe));
+    testselector[0] = functionsToKeep[1];
+    assertTrue(sameMembers(facets[1].functionSelectors, testselector));
 
     }
 

@@ -1,7 +1,6 @@
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-/*
 contract Test2Facet {
     function test2Func1() external {}
 
@@ -43,4 +42,3 @@ contract Test2Facet {
 
     function test2Func20() external {}
 }
-*/
