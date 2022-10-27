@@ -28,7 +28,8 @@ Note: In this implementation the loupe functions are NOT gas optimized. The face
 ## Contributing
   Feel free to create issues and contribute by cloning the repo and adding your changes
   to your own branch. 
-  
+
 ## Authors
-👤 Timo Neumann <timo@fyde.fi> [Teamo0](www.github.com/Teamo0)
-👤 Rohan Sundar <rohan@fyde> [rsundar](www.github.com/rsundar)
+- 👤 Nick Mudge <nick@perfectabstractions.com> [mudgen](www.github.com/mudgen)
+- 👤 Timo Neumann <timo@fyde.fi> [Teamo0](www.github.com/Teamo0)
+- 👤 Rohan Sundar <rohan@fyde> [rsundar](www.github.com/rsundar)
