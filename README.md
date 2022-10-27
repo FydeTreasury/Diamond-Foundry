@@ -30,6 +30,6 @@ Note: In this implementation the loupe functions are NOT gas optimized. The face
   to your own branch. 
 
 ## Authors
-- 👤 Nick Mudge <nick@perfectabstractions.com> [mudgen](www.github.com/mudgen)
-- 👤 Timo Neumann <timo@fyde.fi> [Teamo0](www.github.com/Teamo0)
-- 👤 Rohan Sundar <rohan@fyde> [rsundar](www.github.com/rsundar)
+- 👤 Nick Mudge: <nick@perfectabstractions.com>, Github: [mudgen](www.github.com/mudgen)
+- 👤 Timo Neumann: <timo@fyde.fi>, Github: [Teamo0](www.github.com/Teamo0)
+- 👤 Rohan Sundar: <rohan@fyde.fi>, Github: [rsundar](www.github.com/rsundar)
