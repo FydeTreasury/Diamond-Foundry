@@ -112,7 +112,8 @@ library LibDiamond {
             if(oldFacetAddress != address(0)) {
                 revert CannotAddFunctionToDiamondThatAlreadyExists(selector);
             }            
-            ds.facetAddressAndSelectorPosition[selector] = FacetAddressAndSelectorPosition(_facetAddress, selectorCount);
+            ds.facetAddressAndSelectorPosition[selector] 
+            = FacetAddressAndSelectorPosition(_facetAddress, selectorCount);
             ds.selectors.push(selector);
             selectorCount++;
         }
@@ -150,7 +151,8 @@ library LibDiamond {
         }        
         for (uint256 selectorIndex; selectorIndex < _functionSelectors.length; selectorIndex++) {
             bytes4 selector = _functionSelectors[selectorIndex];
-            FacetAddressAndSelectorPosition memory oldFacetAddressAndSelectorPosition = ds.facetAddressAndSelectorPosition[selector];
+            FacetAddressAndSelectorPosition memory oldFacetAddressAndSelectorPosition 
+            = ds.facetAddressAndSelectorPosition[selector];
             if(oldFacetAddressAndSelectorPosition.facetAddress == address(0)) {
                 revert CannotRemoveFunctionThatDoesNotExist(selector);
             }
@@ -165,7 +167,8 @@ library LibDiamond {
             if (oldFacetAddressAndSelectorPosition.selectorPosition != selectorCount) {
                 bytes4 lastSelector = ds.selectors[selectorCount];
                 ds.selectors[oldFacetAddressAndSelectorPosition.selectorPosition] = lastSelector;
-                ds.facetAddressAndSelectorPosition[lastSelector].selectorPosition = oldFacetAddressAndSelectorPosition.selectorPosition;
+                ds.facetAddressAndSelectorPosition[lastSelector].selectorPosition = 
+                oldFacetAddressAndSelectorPosition.selectorPosition;
             }
             // delete last selector
             ds.selectors.pop();
