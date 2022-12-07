@@ -25,6 +25,11 @@ Note: In this implementation the loupe functions are NOT gas optimized. The face
   ```bash
      $ forge test --ffi --match-path test/DiamondTests.t.sol
   ```
+## Deployment
+To deploy diamond with standard facets, create .env, start anvil and use command
+  ```bash
+     $ forge script scripts/deployDiamond.s.sol:DeployScript --fork-url http://localhost:8545 --broadcast --ffi
+  ```
 ## Contributing
   Feel free to create issues and contribute by cloning the repo and adding your changes
   to your own branch. 
