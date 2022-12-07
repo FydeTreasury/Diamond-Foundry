@@ -28,7 +28,12 @@ Note: In this implementation the loupe functions are NOT gas optimized. The face
 ## Deployment
 To deploy diamond with standard facets, create .env, start anvil and use command
   ```bash
-     $ forge script scripts/deployDiamond.s.sol:DeployScript --fork-url http://localhost:8545 --broadcast --ffi
+     $ forge script script/deployDiamond.s.sol:DeployScript --fork-url http://localhost:8545 --broadcast --ffi
+  ```
+Or deploy to testnet, for example
+  ```bash
+     $ forge script script/deployDiamond.s.sol:DeployScript --rpc-url $GOERLI_RPC_URL --broadcast --verify -vvvv --ffi
+
   ```
 ## Contributing
   Feel free to create issues and contribute by cloning the repo and adding your changes
