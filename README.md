@@ -40,6 +40,6 @@ Or deploy to testnet, for example
   to your own branch. 
 
 ## Authors
-- 👤 Nick Mudge: <nick@perfectabstractions.com>, Github: [mudgen](www.github.com/mudgen)
-- 👤 Timo Neumann: <timo@fyde.fi>, Github: [Teamo0](www.github.com/Teamo0)
-- 👤 Rohan Sundar: <rohan@fyde.fi>, Github: [rsundar](www.github.com/rsundar)
+- 👤 Nick Mudge: <nick@perfectabstractions.com>, Github: [mudgen](https://www.github.com/mudgen)
+- 👤 Timo Neumann: <timo@fyde.fi>, Github: [Teamo0](https://www.github.com/Teamo0)
+- 👤 Rohan Sundar: <rohan@fyde.fi>, Github: [rsundar](https://www.github.com/rsundar)
