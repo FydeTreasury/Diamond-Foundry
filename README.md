@@ -1,4 +1,7 @@
 # Diamond Proxy Template for Foundry
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 ## Description
 This is a reference implementation for EIP-2535 Diamonds by [Nick Mudge](www.github.com/mudgen) translated for use in foundry . To learn about other implementations go here: https://github.com/mudgen/diamond
 
@@ -46,3 +49,19 @@ Or deploy to testnet, for example
 
 ## Contributors
 
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/jdbertron"><img src="https://avatars.githubusercontent.com/u/1455998?v=4?s=100" width="100px;" alt="J.D. Bertron"/><br /><sub><b>J.D. Bertron</b></sub></a><br /><a href="https://github.com/FydeTreasury/Diamond-Foundry/commits?author=jdbertron" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
