@@ -43,3 +43,14 @@ Or deploy to testnet, for example
 - 👤 Nick Mudge: <nick@perfectabstractions.com>, Github: [mudgen](https://www.github.com/mudgen)
 - 👤 Timo Neumann: <timo@fyde.fi>, Github: [Teamo0](https://www.github.com/Teamo0)
 - 👤 Rohan Sundar: <rohan@fyde.fi>, Github: [rsundar](https://www.github.com/rsundar)
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
